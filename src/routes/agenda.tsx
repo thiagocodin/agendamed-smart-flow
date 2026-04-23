@@ -58,18 +58,24 @@ function AgendaPage() {
       </div>
 
       <Card className="p-4 sm:p-6" style={{ boxShadow: "var(--shadow-card)" }}>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold capitalize">
-            {format(cursor, "MMMM yyyy", { locale: ptBR })}
+            {format(cursor, "MMMM 'de' yyyy", { locale: ptBR })}
           </h2>
-          <div className="flex gap-1">
-            <Button variant="outline" size="icon" onClick={() => setCursor(subMonths(cursor, 1))}>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" onClick={() => setCursor(subMonths(cursor, 1))} aria-label="Mês anterior">
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" onClick={() => { setCursor(new Date()); setSelected(new Date()); }}>
-              Hoje
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, 1))}>
+            {!isSameMonth(cursor, new Date()) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setCursor(new Date()); setSelected(new Date()); }}
+              >
+                Hoje
+              </Button>
+            )}
+            <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, 1))} aria-label="Próximo mês">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -86,6 +92,7 @@ function AgendaPage() {
             const isSel = isSameDay(d, selected);
             const today = isToday(d);
             const count = apptsOf(d).length;
+            const hasAppts = count > 0;
             return (
               <button
                 key={d.toISOString()}
@@ -94,22 +101,29 @@ function AgendaPage() {
                   isSel
                     ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-elegant)]"
                     : today
-                    ? "border-primary/40 bg-primary/5 text-foreground"
+                    ? "border-2 border-primary bg-primary/10 font-bold text-primary ring-2 ring-primary/20"
+                    : hasAppts && isCur
+                    ? "border-primary/30 bg-primary/5 text-foreground hover:bg-primary/10"
                     : isCur
                     ? "border-transparent text-foreground hover:bg-secondary"
                     : "border-transparent text-muted-foreground/50 hover:bg-secondary/50"
                 }`}
               >
                 <span className="font-medium">{format(d, "d")}</span>
-                {count > 0 && (
-                  <span className={`mt-1 flex gap-0.5`}>
+                {hasAppts && (
+                  <span className="mt-1 flex gap-0.5">
                     {Array.from({ length: Math.min(count, 3) }).map((_, i) => (
                       <span
                         key={i}
-                        className={`h-1 w-1 rounded-full ${isSel ? "bg-primary-foreground" : "bg-primary"}`}
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          isSel ? "bg-primary-foreground" : today ? "bg-primary" : "bg-primary"
+                        }`}
                       />
                     ))}
                   </span>
+                )}
+                {today && !isSel && (
+                  <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" />
                 )}
               </button>
             );
