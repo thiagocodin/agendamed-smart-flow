@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PacientesRouteImport } from './routes/pacientes'
+import { Route as FinanceiroRouteImport } from './routes/financeiro'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 
 const PacientesRoute = PacientesRouteImport.update({
   id: '/pacientes',
   path: '/pacientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceiroRoute = FinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgendaRoute = AgendaRouteImport.update({
@@ -32,30 +38,34 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/financeiro': typeof FinanceiroRoute
   '/pacientes': typeof PacientesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/financeiro': typeof FinanceiroRoute
   '/pacientes': typeof PacientesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/financeiro': typeof FinanceiroRoute
   '/pacientes': typeof PacientesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/agenda' | '/pacientes'
+  fullPaths: '/' | '/agenda' | '/financeiro' | '/pacientes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agenda' | '/pacientes'
-  id: '__root__' | '/' | '/agenda' | '/pacientes'
+  to: '/' | '/agenda' | '/financeiro' | '/pacientes'
+  id: '__root__' | '/' | '/agenda' | '/financeiro' | '/pacientes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
+  FinanceiroRoute: typeof FinanceiroRoute
   PacientesRoute: typeof PacientesRoute
 }
 
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/pacientes'
       fullPath: '/pacientes'
       preLoaderRoute: typeof PacientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/financeiro': {
+      id: '/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof FinanceiroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agenda': {
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
+  FinanceiroRoute: FinanceiroRoute,
   PacientesRoute: PacientesRoute,
 }
 export const routeTree = rootRouteImport
