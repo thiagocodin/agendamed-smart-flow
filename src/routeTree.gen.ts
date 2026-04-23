@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PacientesRouteImport } from './routes/pacientes'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as FinanceiroRouteImport } from './routes/financeiro'
+import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -19,9 +21,19 @@ const PacientesRoute = PacientesRouteImport.update({
   path: '/pacientes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FinanceiroRoute = FinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroRoute = CadastroRouteImport.update({
+  id: '/cadastro',
+  path: '/cadastro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgendaRoute = AgendaRouteImport.update({
@@ -38,34 +50,55 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/cadastro': typeof CadastroRoute
   '/financeiro': typeof FinanceiroRoute
+  '/login': typeof LoginRoute
   '/pacientes': typeof PacientesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/cadastro': typeof CadastroRoute
   '/financeiro': typeof FinanceiroRoute
+  '/login': typeof LoginRoute
   '/pacientes': typeof PacientesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
+  '/cadastro': typeof CadastroRoute
   '/financeiro': typeof FinanceiroRoute
+  '/login': typeof LoginRoute
   '/pacientes': typeof PacientesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/agenda' | '/financeiro' | '/pacientes'
+  fullPaths:
+    | '/'
+    | '/agenda'
+    | '/cadastro'
+    | '/financeiro'
+    | '/login'
+    | '/pacientes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agenda' | '/financeiro' | '/pacientes'
-  id: '__root__' | '/' | '/agenda' | '/financeiro' | '/pacientes'
+  to: '/' | '/agenda' | '/cadastro' | '/financeiro' | '/login' | '/pacientes'
+  id:
+    | '__root__'
+    | '/'
+    | '/agenda'
+    | '/cadastro'
+    | '/financeiro'
+    | '/login'
+    | '/pacientes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
+  CadastroRoute: typeof CadastroRoute
   FinanceiroRoute: typeof FinanceiroRoute
+  LoginRoute: typeof LoginRoute
   PacientesRoute: typeof PacientesRoute
 }
 
@@ -78,11 +111,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PacientesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/financeiro': {
       id: '/financeiro'
       path: '/financeiro'
       fullPath: '/financeiro'
       preLoaderRoute: typeof FinanceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastro': {
+      id: '/cadastro'
+      path: '/cadastro'
+      fullPath: '/cadastro'
+      preLoaderRoute: typeof CadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agenda': {
@@ -105,9 +152,20 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
+  CadastroRoute: CadastroRoute,
   FinanceiroRoute: FinanceiroRoute,
+  LoginRoute: LoginRoute,
   PacientesRoute: PacientesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

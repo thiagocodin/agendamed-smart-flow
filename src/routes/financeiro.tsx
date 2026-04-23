@@ -34,9 +34,13 @@ function FinanceiroPage() {
   );
 
   const total = monthAppts.reduce((s, a) => s + a.valor, 0);
+  const naoPagas = monthAppts.filter((a) => !a.pago);
   const recebido = monthAppts.filter((a) => a.pago).reduce((s, a) => s + a.valor, 0);
-  const aReceber = monthAppts.filter((a) => !a.pago && isFuture(parseDateTime(a.data, a.hora))).reduce((s, a) => s + a.valor, 0);
-  const pendente = monthAppts.filter((a) => !a.pago && !isFuture(parseDateTime(a.data, a.hora))).reduce((s, a) => s + a.valor, 0);
+  const aReceber = naoPagas
+    .filter((a) => isFuture(parseDateTime(a.data, a.hora)))
+    .reduce((s, a) => s + a.valor, 0);
+  // Pendente = TODAS as consultas não pagas do mês (independente da data)
+  const pendente = naoPagas.reduce((s, a) => s + a.valor, 0);
 
   return (
     <div className="space-y-6">

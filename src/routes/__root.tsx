@@ -1,5 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AppLayout } from "@/components/agenda/Layout";
+import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -66,5 +68,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <AppLayout />;
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AppLayout />
+      </AuthProvider>
+    </ThemeProvider>
+  );
 }

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Plus, Phone, Pencil, Trash2, User } from "lucide-react";
 import { Patient, useAppointments, usePatients } from "@/lib/storage";
 import { toast } from "sonner";
+import { formatPhoneBR, isValidPhoneBR } from "@/lib/phone";
 
 export const Route = createFileRoute("/pacientes")({
   head: () => ({
@@ -32,6 +33,10 @@ function PacientesPage() {
 
   const handleSave = () => {
     if (!nome.trim()) { toast.error("Informe o nome."); return; }
+    if (!isValidPhoneBR(telefone)) {
+      toast.error("Telefone inválido. Use apenas números, com DDD (10 ou 11 dígitos).");
+      return;
+    }
     save({ id: editing?.id, nome: nome.trim(), telefone: telefone.trim() });
     toast.success(editing ? "Paciente atualizado." : "Paciente cadastrado.");
     setOpen(false);
@@ -90,7 +95,16 @@ function PacientesPage() {
           <DialogHeader><DialogTitle>{editing ? "Editar paciente" : "Novo paciente"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2"><Label>Nome</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} /></div>
-            <div className="space-y-2"><Label>Telefone</Label><Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(11) 99999-0000" /></div>
+            <div className="space-y-2">
+              <Label>Telefone</Label>
+              <Input
+                inputMode="numeric"
+                value={telefone}
+                onChange={(e) => setTelefone(formatPhoneBR(e.target.value))}
+                placeholder="(11) 99999-0000"
+              />
+              <p className="text-xs text-muted-foreground">Apenas números — DDD + número.</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
