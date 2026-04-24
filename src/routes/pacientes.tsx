@@ -358,6 +358,7 @@ function PacientesPage() {
         onOpenChange={setApptOpen}
         appointment={apptEditing}
         defaultDate={apptDefaultDate}
+        defaultPatientId={calendarFor?.id}
       />
     </div>
   );
