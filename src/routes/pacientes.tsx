@@ -97,10 +97,13 @@ function PacientesPage() {
     return eachDayOfInterval({ start, end });
   }, [calCursor]);
 
-  const patientAppts = calendarFor ? apptsOf(calendarFor.id) : [];
+  // Mostrar TODAS as consultas do dia (de todos os pacientes), não apenas as do paciente em foco.
   const apptsOnDay = (d: Date) =>
-    patientAppts.filter((a) => isSameDay(parseDateTime(a.data, a.hora), d));
+    appointments
+      .filter((a) => isSameDay(parseDateTime(a.data, a.hora), d))
+      .sort((a, b) => a.hora.localeCompare(b.hora));
   const dayList = calSelected ? apptsOnDay(calSelected) : [];
+  const patientNameById = (id: string) => patients.find((p) => p.id === id)?.nome ?? "—";
 
   const openNewApptForPatient = (p: Patient, dateStr?: string) => {
     setApptDefaultDate(dateStr);
@@ -249,7 +252,7 @@ function PacientesPage() {
               <div key={d} className="py-1">{d}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-1">
             {calendarDays.map((d) => {
               const isCur = isSameMonth(d, calCursor);
               const isSel = calSelected && isSameDay(d, calSelected);
@@ -310,7 +313,12 @@ function PacientesPage() {
                 {dayList.map((a) => (
                   <li key={a.id} className="rounded-md border border-border bg-background p-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <p className="font-medium">{calendarFor?.nome}</p>
+                      <p className="font-medium">
+                        {patientNameById(a.pacienteId)}
+                        {calendarFor && a.pacienteId === calendarFor.id && (
+                          <span className="ml-1 text-[10px] uppercase text-primary">(este paciente)</span>
+                        )}
+                      </p>
                       <StatusBadge s={statusOf(a)} />
                     </div>
                     <p className="text-xs text-muted-foreground">

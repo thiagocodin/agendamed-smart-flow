@@ -59,7 +59,14 @@ function write<T>(key: string, value: T) {
 }
 
 export function uid() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return (
+    Math.random().toString(36).slice(2) +
+    Math.random().toString(36).slice(2) +
+    Date.now().toString(36)
+  );
 }
 
 export function usePatients() {
@@ -164,6 +171,34 @@ if (typeof window !== "undefined") {
       localStorage.removeItem("agendamed:users");
       localStorage.removeItem("agendamed:session");
       localStorage.setItem(USERS_RESET_FLAG, "1");
+    }
+  } catch { /* noop */ }
+}
+
+// One-time fix: ensure every appointment has a unique id (repair legacy duplicates)
+const DEDUPE_FLAG = "agendamed:v2:appts_dedupe";
+if (typeof window !== "undefined") {
+  try {
+    if (!localStorage.getItem(DEDUPE_FLAG)) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith("agendamed:v2:") || !k.endsWith(":appointments")) continue;
+        const raw = localStorage.getItem(k);
+        if (!raw) continue;
+        const list = JSON.parse(raw) as Appointment[];
+        const seen = new Set<string>();
+        const fixed = list.map((a) => {
+          if (!a.id || seen.has(a.id)) {
+            const newId = uid();
+            seen.add(newId);
+            return { ...a, id: newId };
+          }
+          seen.add(a.id);
+          return a;
+        });
+        localStorage.setItem(k, JSON.stringify(fixed));
+      }
+      localStorage.setItem(DEDUPE_FLAG, "1");
     }
   } catch { /* noop */ }
 }
