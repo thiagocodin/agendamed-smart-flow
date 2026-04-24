@@ -59,6 +59,7 @@ function PacientesPage() {
   const [apptOpen, setApptOpen] = useState(false);
   const [apptDefaultDate, setApptDefaultDate] = useState<string | undefined>(undefined);
   const [apptEditing, setApptEditing] = useState<Appointment | null>(null);
+  const [apptDefaultPatientId, setApptDefaultPatientId] = useState<string | undefined>(undefined);
 
   const openNew = () => { setEditing(null); setNome(""); setTelefone(""); setOpen(true); };
   const openEdit = (p: Patient) => { setEditing(p); setNome(p.nome); setTelefone(p.telefone); setOpen(true); };
@@ -108,20 +109,7 @@ function PacientesPage() {
   const openNewApptForPatient = (p: Patient, dateStr?: string) => {
     setApptDefaultDate(dateStr);
     setApptEditing(null);
-    // Pre-select patient by setting "editing" to a dummy with pacienteId via the appointment dialog init
-    // AppointmentDialog uses appointment?.pacienteId first, so we pass a pseudo appointment for new too
-    setApptEditing({
-      id: "",
-      pacienteId: p.id,
-      data: dateStr ?? format(new Date(), "yyyy-MM-dd"),
-      hora: "09:00",
-      valor: 200,
-      observacao: "",
-      pago: false,
-    } as Appointment);
-    // Trick: set editing to null so the dialog treats as "new", but we want patient pre-filled.
-    // Easier: just open with defaultDate and let user pick patient. Reset to null:
-    setApptEditing(null);
+    setApptDefaultPatientId(p.id);
     setApptOpen(true);
   };
 
@@ -300,6 +288,7 @@ function PacientesPage() {
                     onClick={() => {
                       setApptDefaultDate(format(calSelected, "yyyy-MM-dd"));
                       setApptEditing(null);
+                      setApptDefaultPatientId(calendarFor.id);
                       setCalendarFor(null);
                       setApptOpen(true);
                     }}
@@ -342,6 +331,7 @@ function PacientesPage() {
                 onClick={() => {
                   setApptDefaultDate(calSelected ? format(calSelected, "yyyy-MM-dd") : undefined);
                   setApptEditing(null);
+                  setApptDefaultPatientId(calendarFor.id);
                   setCalendarFor(null);
                   setApptOpen(true);
                 }}
@@ -358,6 +348,7 @@ function PacientesPage() {
         onOpenChange={setApptOpen}
         appointment={apptEditing}
         defaultDate={apptDefaultDate}
+        defaultPatientId={apptDefaultPatientId}
       />
     </div>
   );

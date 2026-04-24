@@ -13,9 +13,10 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   appointment?: Appointment | null;
   defaultDate?: string;
+  defaultPatientId?: string;
 }
 
-export function AppointmentDialog({ open, onOpenChange, appointment, defaultDate }: Props) {
+export function AppointmentDialog({ open, onOpenChange, appointment, defaultDate, defaultPatientId }: Props) {
   const { patients } = usePatients();
   const { save, remove } = useAppointments();
   const [pacienteId, setPacienteId] = useState("");
@@ -26,13 +27,13 @@ export function AppointmentDialog({ open, onOpenChange, appointment, defaultDate
 
   useEffect(() => {
     if (open) {
-      setPacienteId(appointment?.pacienteId ?? patients[0]?.id ?? "");
+      setPacienteId(appointment?.pacienteId ?? defaultPatientId ?? patients[0]?.id ?? "");
       setData(appointment?.data ?? defaultDate ?? new Date().toISOString().slice(0, 10));
       setHora(appointment?.hora ?? "09:00");
       setValor(String(appointment?.valor ?? 200));
       setObservacao(appointment?.observacao ?? "");
     }
-  }, [open, appointment, defaultDate, patients]);
+  }, [open, appointment, defaultDate, defaultPatientId, patients]);
 
   const handleSave = () => {
     if (!pacienteId) {
