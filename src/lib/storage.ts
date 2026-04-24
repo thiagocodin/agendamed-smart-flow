@@ -133,7 +133,19 @@ export function useAppointments() {
       const next = all.map((x) => (x.id === a.id ? { ...(x as Appointment), ...a } as Appointment : x));
       write(key, next);
     } else {
-      const novo: Appointment = { id: uid(), ...a } as Appointment;
+      const existingIds = new Set(all.map((x) => x.id));
+      let newId = uid();
+      while (existingIds.has(newId)) newId = uid();
+      // Build explicitly to guarantee the generated id is not overwritten by spread
+      const novo: Appointment = {
+        id: newId,
+        pacienteId: a.pacienteId,
+        data: a.data,
+        hora: a.hora,
+        valor: a.valor,
+        observacao: a.observacao,
+        pago: a.pago,
+      };
       write(key, [...all, novo]);
     }
   }, [userId]);
@@ -149,7 +161,20 @@ export function useAppointments() {
     if (!userId) return;
     const key = apptsKey(userId);
     const all = read<Appointment[]>(key, []);
-    write(key, all.map((x) => (x.id === id ? { ...x, pago: !x.pago } : x)));
+    // Repair any duplicate ids on the fly so toggling only affects one row
+    const seen = new Set<string>();
+    const repaired = all.map((x) => {
+      if (!x.id || seen.has(x.id)) {
+        const nid = uid();
+        seen.add(nid);
+        return { ...x, id: nid };
+      }
+      seen.add(x.id);
+      return x;
+    });
+    const target = repaired.find((x) => x.id === id);
+    const newPago = target ? !target.pago : true;
+    write(key, repaired.map((x) => (x.id === id ? { ...x, pago: newPago } : x)));
   }, [userId]);
 
   return { appointments, save, remove, togglePago };
