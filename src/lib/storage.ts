@@ -119,7 +119,28 @@ export function useAppointments() {
     cleanupLegacy();
     if (!userId) { setAppointments([]); return; }
     const key = apptsKey(userId);
-    setAppointments(read<Appointment[]>(key, []));
+    // Always repair duplicate ids on load to guarantee per-appointment isolation
+    const repair = () => {
+      const list = read<Appointment[]>(key, []);
+      const seen = new Set<string>();
+      let changed = false;
+      const fixed = list.map((a) => {
+        if (!a.id || seen.has(a.id)) {
+          changed = true;
+          let nid = uid();
+          while (seen.has(nid)) nid = uid();
+          seen.add(nid);
+          return { ...a, id: nid };
+        }
+        seen.add(a.id);
+        return a;
+      });
+      if (changed) {
+        localStorage.setItem(key, JSON.stringify(fixed));
+      }
+      return fixed;
+    };
+    setAppointments(repair());
     const handler = () => setAppointments(read<Appointment[]>(key, []));
     window.addEventListener("agendamed:update", handler);
     return () => window.removeEventListener("agendamed:update", handler);
