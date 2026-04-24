@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useAuth } from "@/lib/auth";
 
 export interface Patient {
   id: string;
@@ -17,8 +18,29 @@ export interface Appointment {
   pago: boolean;
 }
 
-const PATIENTS_KEY = "agendamed:patients";
-const APPTS_KEY = "agendamed:appointments";
+// Per-user namespaced keys
+const patientsKey = (uid: string) => `agendamed:v2:${uid}:patients`;
+const apptsKey = (uid: string) => `agendamed:v2:${uid}:appointments`;
+
+// One-time cleanup of legacy/global data from previous versions
+const RESET_FLAG = "agendamed:v2:reset";
+function cleanupLegacy() {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(RESET_FLAG)) return;
+  try {
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      // Remove old unscoped keys
+      if (k === "agendamed:patients" || k === "agendamed:appointments") {
+        toRemove.push(k);
+      }
+    }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+    localStorage.setItem(RESET_FLAG, "1");
+  } catch { /* noop */ }
+}
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -40,89 +62,88 @@ export function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-function seedIfEmpty() {
-  const patients = read<Patient[]>(PATIENTS_KEY, []);
-  const appts = read<Appointment[]>(APPTS_KEY, []);
-  if (patients.length === 0 && appts.length === 0) {
-    const p1: Patient = { id: uid(), nome: "Maria Silva", telefone: "(11) 98888-1111", createdAt: new Date().toISOString() };
-    const p2: Patient = { id: uid(), nome: "João Pereira", telefone: "(11) 97777-2222", createdAt: new Date().toISOString() };
-    const p3: Patient = { id: uid(), nome: "Ana Costa", telefone: "(11) 96666-3333", createdAt: new Date().toISOString() };
-    write(PATIENTS_KEY, [p1, p2, p3]);
-    const today = new Date();
-    const fmt = (d: Date) => d.toISOString().slice(0, 10);
-    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-    const inThree = new Date(today); inThree.setDate(today.getDate() + 3);
-    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 2);
-    write<Appointment[]>(APPTS_KEY, [
-      { id: uid(), pacienteId: p1.id, data: fmt(today), hora: "14:00", valor: 200, observacao: "Sessão de acompanhamento.", pago: false },
-      { id: uid(), pacienteId: p2.id, data: fmt(tomorrow), hora: "10:30", valor: 180, observacao: "Primeira consulta.", pago: false },
-      { id: uid(), pacienteId: p3.id, data: fmt(inThree), hora: "16:00", valor: 220, observacao: "", pago: false },
-      { id: uid(), pacienteId: p1.id, data: fmt(yesterday), hora: "15:00", valor: 200, observacao: "Conclusão do ciclo.", pago: true },
-    ]);
-  }
-}
-
 export function usePatients() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
   const [patients, setPatients] = useState<Patient[]>([]);
+
   useEffect(() => {
-    seedIfEmpty();
-    setPatients(read<Patient[]>(PATIENTS_KEY, []));
-    const handler = () => setPatients(read<Patient[]>(PATIENTS_KEY, []));
+    cleanupLegacy();
+    if (!userId) { setPatients([]); return; }
+    const key = patientsKey(userId);
+    setPatients(read<Patient[]>(key, []));
+    const handler = () => setPatients(read<Patient[]>(key, []));
     window.addEventListener("agendamed:update", handler);
     return () => window.removeEventListener("agendamed:update", handler);
-  }, []);
+  }, [userId]);
 
   const save = useCallback((p: Omit<Patient, "id" | "createdAt"> & { id?: string }) => {
-    const all = read<Patient[]>(PATIENTS_KEY, []);
+    if (!userId) return;
+    const key = patientsKey(userId);
+    const all = read<Patient[]>(key, []);
     if (p.id) {
       const next = all.map((x) => (x.id === p.id ? { ...x, nome: p.nome, telefone: p.telefone } : x));
-      write(PATIENTS_KEY, next);
+      write(key, next);
     } else {
       const novo: Patient = { id: uid(), nome: p.nome, telefone: p.telefone, createdAt: new Date().toISOString() };
-      write(PATIENTS_KEY, [...all, novo]);
+      write(key, [...all, novo]);
     }
-  }, []);
+  }, [userId]);
 
   const remove = useCallback((id: string) => {
-    const all = read<Patient[]>(PATIENTS_KEY, []);
-    write(PATIENTS_KEY, all.filter((x) => x.id !== id));
-    const appts = read<Appointment[]>(APPTS_KEY, []);
-    write(APPTS_KEY, appts.filter((a) => a.pacienteId !== id));
-  }, []);
+    if (!userId) return;
+    const pKey = patientsKey(userId);
+    const aKey = apptsKey(userId);
+    const all = read<Patient[]>(pKey, []);
+    write(pKey, all.filter((x) => x.id !== id));
+    const appts = read<Appointment[]>(aKey, []);
+    write(aKey, appts.filter((a) => a.pacienteId !== id));
+  }, [userId]);
 
   return { patients, save, remove };
 }
 
 export function useAppointments() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+
   useEffect(() => {
-    seedIfEmpty();
-    setAppointments(read<Appointment[]>(APPTS_KEY, []));
-    const handler = () => setAppointments(read<Appointment[]>(APPTS_KEY, []));
+    cleanupLegacy();
+    if (!userId) { setAppointments([]); return; }
+    const key = apptsKey(userId);
+    setAppointments(read<Appointment[]>(key, []));
+    const handler = () => setAppointments(read<Appointment[]>(key, []));
     window.addEventListener("agendamed:update", handler);
     return () => window.removeEventListener("agendamed:update", handler);
-  }, []);
+  }, [userId]);
 
   const save = useCallback((a: Omit<Appointment, "id"> & { id?: string }) => {
-    const all = read<Appointment[]>(APPTS_KEY, []);
+    if (!userId) return;
+    const key = apptsKey(userId);
+    const all = read<Appointment[]>(key, []);
     if (a.id) {
       const next = all.map((x) => (x.id === a.id ? { ...(x as Appointment), ...a } as Appointment : x));
-      write(APPTS_KEY, next);
+      write(key, next);
     } else {
       const novo: Appointment = { id: uid(), ...a } as Appointment;
-      write(APPTS_KEY, [...all, novo]);
+      write(key, [...all, novo]);
     }
-  }, []);
+  }, [userId]);
 
   const remove = useCallback((id: string) => {
-    const all = read<Appointment[]>(APPTS_KEY, []);
-    write(APPTS_KEY, all.filter((x) => x.id !== id));
-  }, []);
+    if (!userId) return;
+    const key = apptsKey(userId);
+    const all = read<Appointment[]>(key, []);
+    write(key, all.filter((x) => x.id !== id));
+  }, [userId]);
 
   const togglePago = useCallback((id: string) => {
-    const all = read<Appointment[]>(APPTS_KEY, []);
-    write(APPTS_KEY, all.map((x) => (x.id === id ? { ...x, pago: !x.pago } : x)));
-  }, []);
+    if (!userId) return;
+    const key = apptsKey(userId);
+    const all = read<Appointment[]>(key, []);
+    write(key, all.map((x) => (x.id === id ? { ...x, pago: !x.pago } : x)));
+  }, [userId]);
 
   return { appointments, save, remove, togglePago };
 }
@@ -133,4 +154,16 @@ export function formatBRL(n: number) {
 
 export function parseDateTime(data: string, hora: string): Date {
   return new Date(`${data}T${hora}:00`);
+}
+
+// Also reset users/sessions to start fresh (one-time)
+const USERS_RESET_FLAG = "agendamed:v2:users_reset";
+if (typeof window !== "undefined") {
+  try {
+    if (!localStorage.getItem(USERS_RESET_FLAG)) {
+      localStorage.removeItem("agendamed:users");
+      localStorage.removeItem("agendamed:session");
+      localStorage.setItem(USERS_RESET_FLAG, "1");
+    }
+  } catch { /* noop */ }
 }
