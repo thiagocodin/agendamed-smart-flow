@@ -313,7 +313,12 @@ function PacientesPage() {
                 {dayList.map((a) => (
                   <li key={a.id} className="rounded-md border border-border bg-background p-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <p className="font-medium">{calendarFor?.nome}</p>
+                      <p className="font-medium">
+                        {patientNameById(a.pacienteId)}
+                        {calendarFor && a.pacienteId === calendarFor.id && (
+                          <span className="ml-1 text-[10px] uppercase text-primary">(este paciente)</span>
+                        )}
+                      </p>
                       <StatusBadge s={statusOf(a)} />
                     </div>
                     <p className="text-xs text-muted-foreground">
