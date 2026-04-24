@@ -97,10 +97,13 @@ function PacientesPage() {
     return eachDayOfInterval({ start, end });
   }, [calCursor]);
 
-  const patientAppts = calendarFor ? apptsOf(calendarFor.id) : [];
+  // Mostrar TODAS as consultas do dia (de todos os pacientes), não apenas as do paciente em foco.
   const apptsOnDay = (d: Date) =>
-    patientAppts.filter((a) => isSameDay(parseDateTime(a.data, a.hora), d));
+    appointments
+      .filter((a) => isSameDay(parseDateTime(a.data, a.hora), d))
+      .sort((a, b) => a.hora.localeCompare(b.hora));
   const dayList = calSelected ? apptsOnDay(calSelected) : [];
+  const patientNameById = (id: string) => patients.find((p) => p.id === id)?.nome ?? "—";
 
   const openNewApptForPatient = (p: Patient, dateStr?: string) => {
     setApptDefaultDate(dateStr);
@@ -249,7 +252,7 @@ function PacientesPage() {
               <div key={d} className="py-1">{d}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-1">
             {calendarDays.map((d) => {
               const isCur = isSameMonth(d, calCursor);
               const isSel = calSelected && isSameDay(d, calSelected);
