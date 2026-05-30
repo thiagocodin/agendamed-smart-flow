@@ -157,7 +157,6 @@ export function useAppointments() {
       const existingIds = new Set(all.map((x) => x.id));
       let newId = uid();
       while (existingIds.has(newId)) newId = uid();
-      // Build explicitly to guarantee the generated id is not overwritten by spread
       const novo: Appointment = {
         id: newId,
         pacienteId: a.pacienteId,
